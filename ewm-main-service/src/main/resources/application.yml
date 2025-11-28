@@ -6,3 +6,6 @@ management:
     web:
       exposure:
         include: health,info
+
+stats:
+  server-url: ${STATS_SERVER_URL:http://stats-server:9090}

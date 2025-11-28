@@ -185,7 +185,6 @@
         </profile>
     </profiles>
 
-    <!-- наши модули -->
     <modules>
         <module>ewm-stats-dto</module>
         <module>ewm-stats-server</module>
