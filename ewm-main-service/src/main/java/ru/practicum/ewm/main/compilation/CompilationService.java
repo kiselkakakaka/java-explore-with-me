@@ -16,7 +16,6 @@ import ru.practicum.ewm.main.event.Event;
 import ru.practicum.ewm.main.event.EventRepository;
 import ru.practicum.ewm.main.exception.NotFoundException;
 import ru.practicum.ewm.main.request.ParticipationRequestRepository;
-import ru.practicum.ewm.main.request.RequestStatus;
 import ru.practicum.ewm.stats.client.StatsClient;
 import ru.practicum.ewm.stats.dto.ViewStatsDto;
 

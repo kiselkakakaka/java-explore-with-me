@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Map;
 
 import ru.practicum.ewm.main.compilation.dto.CompilationDto;
-import ru.practicum.ewm.main.event.Event;
 import ru.practicum.ewm.main.event.EventMapper;
 import ru.practicum.ewm.main.event.dto.EventShortDto;
 
