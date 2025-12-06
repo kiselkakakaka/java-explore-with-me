@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import ru.practicum.ewm.main.event.Location;
 
@@ -32,6 +33,7 @@ public class NewEventDto {
 
     private Boolean paid = false;
 
+    @PositiveOrZero
     private Integer participantLimit = 0;
 
     private Boolean requestModeration = true;

@@ -114,7 +114,7 @@ public class EventService {
 
         if (dto.getEventDate() != null &&
                 dto.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
-            throw new ConflictException(
+            throw new BadRequestException(
                     "Field: eventDate. Error: must be after 2 hours from now. Value: " + dto.getEventDate()
             );
         }

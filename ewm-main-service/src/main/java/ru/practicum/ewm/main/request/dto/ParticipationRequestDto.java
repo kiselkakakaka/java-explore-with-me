@@ -2,10 +2,15 @@ package ru.practicum.ewm.main.request.dto;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 public class ParticipationRequestDto {
 
     private Long id;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime created;
+
     private Long event;
     private Long requester;
     private String status;

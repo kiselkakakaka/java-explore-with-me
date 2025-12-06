@@ -3,6 +3,7 @@ package ru.practicum.ewm.main.event.dto;
 import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import ru.practicum.ewm.main.event.Location;
 
@@ -23,12 +24,14 @@ public class UpdateEventUserRequest {
 
     private Boolean paid;
 
+    @PositiveOrZero
     private Integer participantLimit;
 
     private Boolean requestModeration;
 
     private String stateAction;
 
+    @Size(min = 3, max = 120)
     private String title;
 
     public UpdateEventUserRequest() {
