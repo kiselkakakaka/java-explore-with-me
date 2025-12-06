@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.ewm.main.category.dto.CategoryDto;
 import ru.practicum.ewm.main.category.dto.NewCategoryDto;
+import ru.practicum.ewm.main.event.EventRepository;
 import ru.practicum.ewm.main.exception.ConflictException;
 import ru.practicum.ewm.main.exception.NotFoundException;
 
@@ -17,9 +18,12 @@ import ru.practicum.ewm.main.exception.NotFoundException;
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final EventRepository eventRepository;
 
-    public CategoryService(CategoryRepository categoryRepository) {
+    public CategoryService(CategoryRepository categoryRepository,
+                           EventRepository eventRepository) {
         this.categoryRepository = categoryRepository;
+        this.eventRepository = eventRepository;
     }
 
     @Transactional
@@ -37,6 +41,11 @@ public class CategoryService {
         if (!categoryRepository.existsById(catId)) {
             throw new NotFoundException("Category with id=" + catId + " was not found");
         }
+
+        if (eventRepository.existsByCategoryId(catId)) {
+            throw new ConflictException("The category is not empty");
+        }
+
         categoryRepository.deleteById(catId);
     }
 

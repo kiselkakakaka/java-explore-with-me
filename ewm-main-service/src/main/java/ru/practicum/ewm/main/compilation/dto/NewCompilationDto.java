@@ -12,7 +12,7 @@ public class NewCompilationDto {
     private Boolean pinned = Boolean.FALSE;
 
     @NotBlank
-    @Size(min = 1, max = 120)
+    @Size(max = 50)
     private String title;
 
     public NewCompilationDto() {

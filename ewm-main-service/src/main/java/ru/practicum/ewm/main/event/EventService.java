@@ -58,11 +58,16 @@ public class EventService {
 
         LocalDateTime now = LocalDateTime.now();
         if (dto.getEventDate().isBefore(now.plusHours(2))) {
-            throw new ConflictException("Field: eventDate. Error: must be after 2 hours from now. Value: " + dto.getEventDate());
+            throw new ConflictException(
+                    "Field: eventDate. Error: must be after 2 hours from now. Value: " + dto.getEventDate()
+            );
         }
 
         Event event = EventMapper.toEntity(dto, category, initiator, now);
-        event.setTitle(dto.getTitle());
+
+        if (event.getParticipantLimit() < 0) {
+            event.setParticipantLimit(0);
+        }
 
         Event saved = eventRepository.save(event);
 
@@ -77,7 +82,8 @@ public class EventService {
         Map<Long, Long> confirmedMap = getConfirmedRequests(events);
 
         return events.stream()
-                .map(e -> EventMapper.toShortDto(e,
+                .map(e -> EventMapper.toShortDto(
+                        e,
                         confirmedMap.getOrDefault(e.getId(), 0L),
                         0L))
                 .collect(Collectors.toList());
@@ -108,7 +114,9 @@ public class EventService {
 
         if (dto.getEventDate() != null &&
                 dto.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
-            throw new ConflictException("Field: eventDate. Error: must be after 2 hours from now. Value: " + dto.getEventDate());
+            throw new ConflictException(
+                    "Field: eventDate. Error: must be after 2 hours from now. Value: " + dto.getEventDate()
+            );
         }
 
         applyUserUpdate(event, dto);
@@ -251,7 +259,9 @@ public class EventService {
             switch (dto.getStateAction()) {
                 case "PUBLISH_EVENT" -> {
                     if (event.getState() != EventState.PENDING) {
-                        throw new ConflictException("Cannot publish the event because it's not in the right state: " + event.getState());
+                        throw new ConflictException(
+                                "Cannot publish the event because it's not in the right state: " + event.getState()
+                        );
                     }
                     event.setState(EventState.PUBLISHED);
                     event.setPublishedOn(LocalDateTime.now());

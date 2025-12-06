@@ -10,7 +10,7 @@ public class UpdateCompilationRequest {
 
     private Boolean pinned;
 
-    @Size(min = 1, max = 120)
+    @Size(max = 50)
     private String title;
 
     public UpdateCompilationRequest() {

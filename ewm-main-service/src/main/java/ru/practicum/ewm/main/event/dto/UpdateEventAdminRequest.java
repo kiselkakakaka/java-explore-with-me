@@ -2,6 +2,7 @@ package ru.practicum.ewm.main.event.dto;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import ru.practicum.ewm.main.event.Location;
 
 public class UpdateEventAdminRequest {
@@ -9,7 +10,10 @@ public class UpdateEventAdminRequest {
     private String annotation;
     private Long category;
     private String description;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime eventDate;
+
     private Location location;
     private Boolean paid;
     private Integer participantLimit;
