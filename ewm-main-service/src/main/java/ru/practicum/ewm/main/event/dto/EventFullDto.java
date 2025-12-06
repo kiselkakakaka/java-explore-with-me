@@ -2,6 +2,7 @@ package ru.practicum.ewm.main.event.dto;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import ru.practicum.ewm.main.category.dto.CategoryDto;
 import ru.practicum.ewm.main.event.EventState;
 import ru.practicum.ewm.main.event.Location;
@@ -13,13 +14,21 @@ public class EventFullDto {
     private String annotation;
     private CategoryDto category;
     private String description;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime eventDate;
+
     private UserShortDto initiator;
     private Location location;
     private Boolean paid;
     private Integer participantLimit;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdOn;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime publishedOn;
+
     private Boolean requestModeration;
     private EventState state;
     private String title;
@@ -27,6 +36,40 @@ public class EventFullDto {
     private Long views;
 
     public EventFullDto() {
+    }
+
+    public EventFullDto(Long id,
+                        String annotation,
+                        CategoryDto category,
+                        String description,
+                        LocalDateTime eventDate,
+                        UserShortDto initiator,
+                        Location location,
+                        Boolean paid,
+                        Integer participantLimit,
+                        LocalDateTime createdOn,
+                        LocalDateTime publishedOn,
+                        Boolean requestModeration,
+                        EventState state,
+                        String title,
+                        Long confirmedRequests,
+                        Long views) {
+        this.id = id;
+        this.annotation = annotation;
+        this.category = category;
+        this.description = description;
+        this.eventDate = eventDate;
+        this.initiator = initiator;
+        this.location = location;
+        this.paid = paid;
+        this.participantLimit = participantLimit;
+        this.createdOn = createdOn;
+        this.publishedOn = publishedOn;
+        this.requestModeration = requestModeration;
+        this.state = state;
+        this.title = title;
+        this.confirmedRequests = confirmedRequests;
+        this.views = views;
     }
 
     public Long getId() {

@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import jakarta.validation.ConstraintViolationException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -45,6 +47,55 @@ public class ErrorHandler {
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiError> handleValidation(MethodArgumentNotValidException ex) {
+        List<String> errors = ex.getBindingResult().getFieldErrors().stream()
+                .map(ErrorHandler::formatFieldError)
+                .collect(Collectors.toList());
+
+        ApiError error = new ApiError(
+                errors,
+                errors.isEmpty() ? "Validation failed" : errors.get(0),
+                "Incorrectly made request.",
+                HttpStatus.BAD_REQUEST.name(),
+                LocalDateTime.now()
+        );
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiError> handleConstraintViolation(ConstraintViolationException ex) {
+        List<String> errors = ex.getConstraintViolations().stream()
+                .map(v -> String.format(
+                        "Field: %s. Error: %s. Value: %s",
+                        v.getPropertyPath(),
+                        v.getMessage(),
+                        v.getInvalidValue()
+                ))
+                .collect(Collectors.toList());
+
+        ApiError error = new ApiError(
+                errors,
+                errors.isEmpty() ? "Validation failed" : errors.get(0),
+                "Incorrectly made request.",
+                HttpStatus.BAD_REQUEST.name(),
+                LocalDateTime.now()
+        );
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiError> handleMissingParam(MissingServletRequestParameterException ex) {
+        ApiError error = new ApiError(
+                List.of(ex.getMessage()),
+                ex.getMessage(),
+                "Incorrectly made request.",
+                HttpStatus.BAD_REQUEST.name(),
+                LocalDateTime.now()
+        );
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<ApiError> handleNotFound(NotFoundException ex) {
         ApiError error = new ApiError(
@@ -69,6 +120,22 @@ public class ErrorHandler {
         return new ResponseEntity<>(error, HttpStatus.CONFLICT);
     }
 
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiError> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        String rootMessage = ex.getRootCause() != null
+                ? ex.getRootCause().getMessage()
+                : ex.getMessage();
+
+        ApiError error = new ApiError(
+                List.of(rootMessage),
+                rootMessage,
+                "Integrity constraint has been violated.",
+                HttpStatus.CONFLICT.name(),
+                LocalDateTime.now()
+        );
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+    }
+
     @ExceptionHandler(ForbiddenException.class)
     public ResponseEntity<ApiError> handleForbidden(ForbiddenException ex) {
         ApiError error = new ApiError(
@@ -85,34 +152,6 @@ public class ErrorHandler {
     public ResponseEntity<ApiError> handleBadRequest(BadRequestException ex) {
         ApiError error = new ApiError(
                 List.of(),
-                ex.getMessage(),
-                "Incorrectly made request.",
-                HttpStatus.BAD_REQUEST.name(),
-                LocalDateTime.now()
-        );
-        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
-    }
-
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiError> handleValidation(MethodArgumentNotValidException ex) {
-        List<String> errors = ex.getBindingResult().getFieldErrors().stream()
-                .map(ErrorHandler::formatFieldError)
-                .collect(Collectors.toList());
-
-        ApiError error = new ApiError(
-                errors,
-                errors.isEmpty() ? "Validation failed" : errors.get(0),
-                "Incorrectly made request.",
-                HttpStatus.BAD_REQUEST.name(),
-                LocalDateTime.now()
-        );
-        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
-    }
-
-    @ExceptionHandler(MissingServletRequestParameterException.class)
-    public ResponseEntity<ApiError> handleMissingParam(MissingServletRequestParameterException ex) {
-        ApiError error = new ApiError(
-                List.of(ex.getMessage()),
                 ex.getMessage(),
                 "Incorrectly made request.",
                 HttpStatus.BAD_REQUEST.name(),
