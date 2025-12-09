@@ -318,7 +318,6 @@ public class EventService {
         validatePage(from, size);
         PageRequest page = PageRequest.of(from / size, size);
 
-        // фикс: сначала сохраняем hit
         saveHit(request);
 
         List<Event> events = eventRepository
@@ -359,7 +358,6 @@ public class EventService {
             throw new NotFoundException("Event with id=" + eventId + " was not found");
         }
 
-        // фикс: сначала пишем hit с корректным IP
         saveHit(request);
 
         long confirmed = requestRepository.countByEventIdAndStatus(eventId, RequestStatus.CONFIRMED);
@@ -391,11 +389,15 @@ public class EventService {
                 .map(e -> "/events/" + e.getId())
                 .toList();
 
-        LocalDateTime start = LocalDateTime.now().minusYears(10);
+        LocalDateTime start = events.stream()
+                .map(Event::getCreatedOn)
+                .filter(Objects::nonNull)
+                .min(LocalDateTime::compareTo)
+                .orElse(LocalDateTime.now().minusYears(10));
+
         LocalDateTime end = LocalDateTime.now().plusYears(1);
 
         try {
-            // ключевой момент: считаем ТОЛЬКО уникальные просмотры
             List<ViewStatsDto> stats = statsClient.getStats(start, end, uris, true);
 
             Map<String, Long> byUri = stats.stream()
@@ -421,7 +423,12 @@ public class EventService {
         if (ip != null && !ip.isBlank()) {
             ip = ip.split(",")[0].trim();
         } else {
-            ip = request.getRemoteAddr();
+            String realIp = request.getHeader("X-Real-IP");
+            if (realIp != null && !realIp.isBlank()) {
+                ip = realIp.trim();
+            } else {
+                ip = request.getRemoteAddr();
+            }
         }
 
         EndpointHitDto dto = new EndpointHitDto();
