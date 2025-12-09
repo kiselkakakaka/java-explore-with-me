@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import ru.practicum.ewm.stats.dto.EndpointHitDto;
 import ru.practicum.ewm.stats.dto.ViewStatsDto;
 import ru.practicum.ewm.stats.server.service.StatsService;
@@ -35,6 +36,21 @@ public class StatsController {
                                        LocalDateTime end,
                                        @RequestParam(required = false) List<String> uris,
                                        @RequestParam(defaultValue = "false") boolean unique) {
+
+        if (start == null || end == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Parameters 'start' and 'end' are required"
+            );
+        }
+
+        if (end.isBefore(start)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Parameter 'end' must be after 'start'"
+            );
+        }
+
         return statsService.getStats(start, end, uris, unique);
     }
 }
