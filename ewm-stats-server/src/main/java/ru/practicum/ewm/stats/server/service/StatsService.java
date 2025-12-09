@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
-@Transactional
+@Transactional(readOnly = true)
 public class StatsService {
 
     private final EndpointHitRepository repository;
@@ -22,25 +22,27 @@ public class StatsService {
 
     @Transactional
     public EndpointHitDto saveHit(EndpointHitDto dto) {
-        EndpointHit hit = new EndpointHit(
-                null,
-                dto.getApp(),
-                dto.getUri(),
-                dto.getIp(),
-                dto.getTimestamp()
-        );
+        EndpointHit hit = new EndpointHit();
+        hit.setApp(dto.getApp());
+        hit.setUri(dto.getUri());
+        hit.setIp(dto.getIp());
+        hit.setTimestamp(dto.getTimestamp());
 
         EndpointHit saved = repository.save(hit);
 
-        dto.setId(saved.getId());
-        return dto;
+        EndpointHitDto result = new EndpointHitDto();
+        result.setId(saved.getId());
+        result.setApp(saved.getApp());
+        result.setUri(saved.getUri());
+        result.setIp(saved.getIp());
+        result.setTimestamp(saved.getTimestamp());
+        return result;
     }
 
     public List<ViewStatsDto> getStats(LocalDateTime start,
                                        LocalDateTime end,
                                        List<String> uris,
                                        boolean unique) {
-
         if (unique) {
             return repository.getStatsUnique(start, end, uris);
         } else {
