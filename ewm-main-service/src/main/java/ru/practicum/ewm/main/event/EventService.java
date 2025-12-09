@@ -318,6 +318,7 @@ public class EventService {
         validatePage(from, size);
         PageRequest page = PageRequest.of(from / size, size);
 
+        // фикс: сначала сохраняем hit
         saveHit(request);
 
         List<Event> events = eventRepository
@@ -358,6 +359,7 @@ public class EventService {
             throw new NotFoundException("Event with id=" + eventId + " was not found");
         }
 
+        // фикс: сначала пишем hit с корректным IP
         saveHit(request);
 
         long confirmed = requestRepository.countByEventIdAndStatus(eventId, RequestStatus.CONFIRMED);
@@ -393,7 +395,8 @@ public class EventService {
         LocalDateTime end = LocalDateTime.now().plusYears(1);
 
         try {
-            List<ViewStatsDto> stats = statsClient.getStats(start, end, uris, false);
+            // ключевой момент: считаем ТОЛЬКО уникальные просмотры
+            List<ViewStatsDto> stats = statsClient.getStats(start, end, uris, true);
 
             Map<String, Long> byUri = stats.stream()
                     .collect(Collectors.toMap(ViewStatsDto::getUri, ViewStatsDto::getHits, Long::sum));
@@ -414,10 +417,17 @@ public class EventService {
     }
 
     private void saveHit(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip != null && !ip.isBlank()) {
+            ip = ip.split(",")[0].trim();
+        } else {
+            ip = request.getRemoteAddr();
+        }
+
         EndpointHitDto dto = new EndpointHitDto();
         dto.setApp("ewm-main-service");
         dto.setUri(request.getRequestURI());
-        dto.setIp(request.getRemoteAddr());
+        dto.setIp(ip);
         dto.setTimestamp(LocalDateTime.now());
         statsClient.hit(dto);
     }
