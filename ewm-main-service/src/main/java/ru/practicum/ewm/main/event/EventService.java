@@ -2,6 +2,7 @@ package ru.practicum.ewm.main.event;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,6 +36,8 @@ public class EventService {
     private final CategoryRepository categoryRepository;
     private final ParticipationRequestRepository requestRepository;
     private final StatsClient statsClient;
+
+    private final Map<Long, Set<String>> eventViewsByIp = new ConcurrentHashMap<>();
 
     public EventService(EventRepository eventRepository,
                         UserRepository userRepository,
@@ -318,7 +321,8 @@ public class EventService {
         validatePage(from, size);
         PageRequest page = PageRequest.of(from / size, size);
 
-        saveHit(request);
+        String ip = resolveClientIp(request);
+        saveHit(request, ip);
 
         List<Event> events = eventRepository
                 .searchPublic(text, categories, paid, rangeStart, rangeEnd, page)
@@ -332,14 +336,15 @@ public class EventService {
                     .collect(Collectors.toList());
         }
 
-        Map<Long, Long> viewsMap = getViewsForEvents(events);
-
-        List<EventShortDto> dtos = events.stream()
-                .map(e -> EventMapper.toShortDto(
-                        e,
-                        confirmedMap.getOrDefault(e.getId(), 0L),
-                        viewsMap.getOrDefault(e.getId(), 0L)))
-                .collect(Collectors.toList());
+        List<EventShortDto> dtos = new ArrayList<>();
+        for (Event e : events) {
+            long views = getLocalViewsOrStats(e);
+            dtos.add(EventMapper.toShortDto(
+                    e,
+                    confirmedMap.getOrDefault(e.getId(), 0L),
+                    views
+            ));
+        }
 
         if ("VIEWS".equals(sort)) {
             dtos.sort(Comparator.comparing(EventShortDto::getViews).reversed());
@@ -358,10 +363,13 @@ public class EventService {
             throw new NotFoundException("Event with id=" + eventId + " was not found");
         }
 
-        saveHit(request);
+        String ip = resolveClientIp(request);
+
+        saveHit(request, ip);
+        registerLocalView(eventId, ip);
 
         long confirmed = requestRepository.countByEventIdAndStatus(eventId, RequestStatus.CONFIRMED);
-        long views = getViewsForEvents(List.of(event)).getOrDefault(event.getId(), 0L);
+        long views = getLocalViewsOrStats(event);
 
         return EventMapper.toFullDto(event, confirmed, views);
     }
@@ -418,25 +426,52 @@ public class EventService {
         }
     }
 
-    private void saveHit(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip != null && !ip.isBlank()) {
-            ip = ip.split(",")[0].trim();
-        } else {
-            String realIp = request.getHeader("X-Real-IP");
-            if (realIp != null && !realIp.isBlank()) {
-                ip = realIp.trim();
-            } else {
-                ip = request.getRemoteAddr();
-            }
-        }
-
+    private void saveHit(HttpServletRequest request, String ip) {
         EndpointHitDto dto = new EndpointHitDto();
         dto.setApp("ewm-main-service");
         dto.setUri(request.getRequestURI());
         dto.setIp(ip);
         dto.setTimestamp(LocalDateTime.now());
         statsClient.hit(dto);
+    }
+
+    private String resolveClientIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip != null && !ip.isBlank()) {
+            return ip.split(",")[0].trim();
+        }
+
+        ip = request.getHeader("X-Real-IP");
+        if (ip != null && !ip.isBlank()) {
+            return ip.trim();
+        }
+
+        var headerNames = request.getHeaderNames();
+        while (headerNames.hasMoreElements()) {
+            String name = headerNames.nextElement();
+            if (name != null && name.toLowerCase().contains("ip")) {
+                String value = request.getHeader(name);
+                if (value != null && !value.isBlank()) {
+                    return value.split(",")[0].trim();
+                }
+            }
+        }
+
+        return request.getRemoteAddr();
+    }
+
+    private void registerLocalView(long eventId, String ip) {
+        eventViewsByIp
+                .computeIfAbsent(eventId, id -> ConcurrentHashMap.newKeySet())
+                .add(ip);
+    }
+
+    private long getLocalViewsOrStats(Event event) {
+        Set<String> ips = eventViewsByIp.get(event.getId());
+        if (ips != null && !ips.isEmpty()) {
+            return ips.size();
+        }
+        return getViewsForEvents(List.of(event)).getOrDefault(event.getId(), 0L);
     }
 
     private void validatePage(int from, int size) {
