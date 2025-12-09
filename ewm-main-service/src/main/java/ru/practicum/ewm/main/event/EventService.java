@@ -77,6 +77,8 @@ public class EventService {
     }
 
     public List<EventShortDto> getUserEvents(long userId, int from, int size) {
+        validatePage(from, size);
+
         PageRequest page = PageRequest.of(from / size, size);
         List<Event> events = eventRepository.findAllByInitiatorId(userId, page).getContent();
         Map<Long, Long> confirmedMap = getConfirmedRequests(events);
@@ -183,6 +185,7 @@ public class EventService {
             throw new BadRequestException("rangeEnd must be after rangeStart");
         }
 
+        validatePage(from, size);
         List<EventState> stateEnums = null;
         if (states != null && !states.isEmpty()) {
             stateEnums = states.stream()
@@ -213,14 +216,21 @@ public class EventService {
 
         if (dto.getEventDate() != null &&
                 dto.getEventDate().isBefore(LocalDateTime.now().plusHours(1))) {
-            throw new ConflictException("EventDate must be at least 1 hour after publication time");
+            throw new BadRequestException(
+                    "Field: eventDate. Error: must be at least 1 hour after now. Value: " + dto.getEventDate()
+            );
         }
 
         applyAdminUpdate(event, dto);
 
         Event saved = eventRepository.save(event);
         long confirmed = requestRepository.countByEventIdAndStatus(eventId, RequestStatus.CONFIRMED);
-        long views = getViewsForEvents(List.of(saved)).getOrDefault(saved.getId(), 0L);
+        long views;
+        try {
+            views = getViewsForEvents(List.of(saved)).getOrDefault(saved.getId(), 0L);
+        } catch (RuntimeException ex) {
+            views = 0;
+        }
 
         return EventMapper.toFullDto(saved, confirmed, views);
     }
@@ -305,7 +315,11 @@ public class EventService {
             throw new BadRequestException("rangeEnd must be after rangeStart");
         }
 
+        validatePage(from, size);
         PageRequest page = PageRequest.of(from / size, size);
+
+        saveHit(request);
+
         List<Event> events = eventRepository
                 .searchPublic(text, categories, paid, rangeStart, rangeEnd, page)
                 .getContent();
@@ -332,8 +346,6 @@ public class EventService {
         } else if ("EVENT_DATE".equals(sort)) {
             dtos.sort(Comparator.comparing(EventShortDto::getEventDate));
         }
-
-        saveHit(request);
 
         return dtos;
     }
@@ -372,6 +384,7 @@ public class EventService {
         if (events.isEmpty()) {
             return Map.of();
         }
+
         List<String> uris = events.stream()
                 .map(e -> "/events/" + e.getId())
                 .toList();
@@ -379,17 +392,25 @@ public class EventService {
         LocalDateTime start = LocalDateTime.now().minusYears(10);
         LocalDateTime end = LocalDateTime.now().plusYears(1);
 
-        List<ViewStatsDto> stats = statsClient.getStats(start, end, uris, false);
+        try {
+            List<ViewStatsDto> stats = statsClient.getStats(start, end, uris, false);
 
-        Map<String, Long> byUri = stats.stream()
-                .collect(Collectors.toMap(ViewStatsDto::getUri, ViewStatsDto::getHits, Long::sum));
+            Map<String, Long> byUri = stats.stream()
+                    .collect(Collectors.toMap(ViewStatsDto::getUri, ViewStatsDto::getHits, Long::sum));
 
-        Map<Long, Long> result = new HashMap<>();
-        for (Event e : events) {
-            String uri = "/events/" + e.getId();
-            result.put(e.getId(), byUri.getOrDefault(uri, 0L));
+            Map<Long, Long> result = new HashMap<>();
+            for (Event e : events) {
+                String uri = "/events/" + e.getId();
+                result.put(e.getId(), byUri.getOrDefault(uri, 0L));
+            }
+            return result;
+        } catch (RuntimeException ex) {
+            Map<Long, Long> zeros = new HashMap<>();
+            for (Event e : events) {
+                zeros.put(e.getId(), 0L);
+            }
+            return zeros;
         }
-        return result;
     }
 
     private void saveHit(HttpServletRequest request) {
@@ -399,5 +420,11 @@ public class EventService {
         dto.setIp(request.getRemoteAddr());
         dto.setTimestamp(LocalDateTime.now());
         statsClient.hit(dto);
+    }
+
+    private void validatePage(int from, int size) {
+        if (from < 0 || size <= 0) {
+            throw new BadRequestException("from must be >= 0 and size must be > 0");
+        }
     }
 }

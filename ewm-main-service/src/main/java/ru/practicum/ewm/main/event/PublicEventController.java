@@ -23,7 +23,7 @@ public class PublicEventController {
     }
 
     @GetMapping
-    public List<EventShortDto> getEvents(
+    public List<EventShortDto> searchPublicEvents(
             @RequestParam(required = false) String text,
             @RequestParam(required = false) List<Long> categories,
             @RequestParam(required = false) Boolean paid,
@@ -33,10 +33,16 @@ public class PublicEventController {
             @RequestParam(required = false) String sort,
             @RequestParam(defaultValue = "0") int from,
             @RequestParam(defaultValue = "10") int size,
-            HttpServletRequest request) {
-
-        LocalDateTime start = rangeStart != null ? LocalDateTime.parse(rangeStart, FORMATTER) : null;
-        LocalDateTime end = rangeEnd != null ? LocalDateTime.parse(rangeEnd, FORMATTER) : null;
+            HttpServletRequest request
+    ) {
+        LocalDateTime start = null;
+        LocalDateTime end = null;
+        if (rangeStart != null) {
+            start = LocalDateTime.parse(rangeStart, FORMATTER);
+        }
+        if (rangeEnd != null) {
+            end = LocalDateTime.parse(rangeEnd, FORMATTER);
+        }
 
         return eventService.searchPublicEvents(
                 text,
@@ -53,8 +59,8 @@ public class PublicEventController {
     }
 
     @GetMapping("/{eventId}")
-    public EventFullDto getEvent(@PathVariable long eventId,
-                                 HttpServletRequest request) {
+    public EventFullDto getPublicEvent(@PathVariable long eventId,
+                                       HttpServletRequest request) {
         return eventService.getPublicEvent(eventId, request);
     }
 }

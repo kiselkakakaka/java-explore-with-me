@@ -41,10 +41,6 @@ public class StatsService {
                                        List<String> uris,
                                        boolean unique) {
 
-        if (end.isBefore(start)) {
-            throw new IllegalArgumentException("end must be after start");
-        }
-
         if (unique) {
             return repository.getStatsUnique(start, end, uris);
         } else {

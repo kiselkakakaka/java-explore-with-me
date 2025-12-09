@@ -5,7 +5,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -32,7 +37,6 @@ public class StatsClient {
         restTemplate.postForEntity(serverUrl + "/hit", request, Void.class);
     }
 
-    @SuppressWarnings("unchecked")
     public List<ViewStatsDto> getStats(LocalDateTime start,
                                        LocalDateTime end,
                                        List<String> uris,
@@ -50,9 +54,15 @@ public class StatsClient {
             }
         }
 
-        ResponseEntity<List> response =
-                restTemplate.getForEntity(builder.toUriString(), List.class);
+        ResponseEntity<List<ViewStatsDto>> response =
+                restTemplate.exchange(
+                        builder.toUriString(),
+                        HttpMethod.GET,
+                        null,
+                        new ParameterizedTypeReference<List<ViewStatsDto>>() { }
+                );
 
-        return (List<ViewStatsDto>) (List<?>) response.getBody();
+        List<ViewStatsDto> body = response.getBody();
+        return body != null ? body : List.of();
     }
 }

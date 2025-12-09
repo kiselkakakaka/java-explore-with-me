@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.ewm.main.category.dto.CategoryDto;
 import ru.practicum.ewm.main.category.dto.NewCategoryDto;
 import ru.practicum.ewm.main.event.EventRepository;
+import ru.practicum.ewm.main.exception.BadRequestException;
 import ru.practicum.ewm.main.exception.ConflictException;
 import ru.practicum.ewm.main.exception.NotFoundException;
 
@@ -63,6 +64,10 @@ public class CategoryService {
     }
 
     public List<CategoryDto> getAll(int from, int size) {
+        if (from < 0 || size <= 0) {
+            throw new BadRequestException("from must be >= 0 and size must be > 0");
+        }
+
         PageRequest page = PageRequest.of(from / size, size);
         return categoryRepository.findAll(page).getContent().stream()
                 .map(CategoryMapper::toDto)

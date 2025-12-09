@@ -8,13 +8,13 @@ public class CompilationDto {
 
     private Long id;
     private String title;
-    private boolean pinned;
+    private Boolean pinned;
     private List<EventShortDto> events;
 
     public CompilationDto() {
     }
 
-    public CompilationDto(Long id, String title, boolean pinned, List<EventShortDto> events) {
+    public CompilationDto(Long id, String title, Boolean pinned, List<EventShortDto> events) {
         this.id = id;
         this.title = title;
         this.pinned = pinned;
@@ -29,7 +29,7 @@ public class CompilationDto {
         return title;
     }
 
-    public boolean isPinned() {
+    public Boolean getPinned() {
         return pinned;
     }
 
@@ -45,7 +45,7 @@ public class CompilationDto {
         this.title = title;
     }
 
-    public void setPinned(boolean pinned) {
+    public void setPinned(Boolean pinned) {
         this.pinned = pinned;
     }
 

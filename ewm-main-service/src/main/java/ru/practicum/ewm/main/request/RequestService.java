@@ -99,7 +99,6 @@ public class RequestService {
         return RequestMapper.toDto(saved);
     }
 
-
     public List<ParticipationRequestDto> getEventRequests(long userId, long eventId) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
@@ -140,6 +139,10 @@ public class RequestService {
 
         int participantLimit = event.getParticipantLimit();
         long confirmed = requestRepository.countByEventIdAndStatus(eventId, RequestStatus.CONFIRMED);
+
+        if (participantLimit != 0 && confirmed >= participantLimit && newStatus == RequestStatus.CONFIRMED) {
+            throw new ConflictException("Participant limit has been reached");
+        }
 
         List<ParticipationRequestDto> confirmedDtos = new ArrayList<>();
         List<ParticipationRequestDto> rejectedDtos = new ArrayList<>();

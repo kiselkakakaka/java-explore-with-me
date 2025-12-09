@@ -3,12 +3,12 @@ package ru.practicum.ewm.main.event;
 import java.time.LocalDateTime;
 
 import ru.practicum.ewm.main.category.Category;
-import ru.practicum.ewm.main.category.dto.CategoryDto;
+import ru.practicum.ewm.main.category.CategoryMapper;
 import ru.practicum.ewm.main.event.dto.EventFullDto;
 import ru.practicum.ewm.main.event.dto.EventShortDto;
 import ru.practicum.ewm.main.event.dto.NewEventDto;
 import ru.practicum.ewm.main.user.User;
-import ru.practicum.ewm.main.user.dto.UserShortDto;
+import ru.practicum.ewm.main.user.UserMapper;
 
 public class EventMapper {
 
@@ -27,6 +27,7 @@ public class EventMapper {
         event.setInitiator(initiator);
         event.setEventDate(dto.getEventDate());
         event.setCreatedOn(createdOn);
+        event.setPublishedOn(null);
         event.setLocation(dto.getLocation());
         event.setPaid(dto.getPaid() != null ? dto.getPaid() : false);
         event.setParticipantLimit(dto.getParticipantLimit() != null ? dto.getParticipantLimit() : 0);
@@ -41,23 +42,20 @@ public class EventMapper {
         EventFullDto dto = new EventFullDto();
         dto.setId(event.getId());
         dto.setAnnotation(event.getAnnotation());
+        dto.setCategory(CategoryMapper.toDto(event.getCategory()));
         dto.setDescription(event.getDescription());
-        dto.setTitle(event.getTitle());
         dto.setEventDate(event.getEventDate());
-        dto.setCreatedOn(event.getCreatedOn());
-        dto.setPublishedOn(event.getPublishedOn());
+        dto.setInitiator(UserMapper.toShortDto(event.getInitiator()));
         dto.setLocation(event.getLocation());
         dto.setPaid(event.isPaid());
         dto.setParticipantLimit(event.getParticipantLimit());
-        dto.setRequestModeration(event.isRequestModeration());
+        dto.setCreatedOn(event.getCreatedOn());
+        dto.setPublishedOn(event.getPublishedOn());
+        dto.setRequestModeration(event.getRequestModeration());
         dto.setState(event.getState());
-
-        dto.setCategory(toCategoryDto(event.getCategory()));
-        dto.setInitiator(toUserShortDto(event.getInitiator()));
-
+        dto.setTitle(event.getTitle());
         dto.setConfirmedRequests(confirmedRequests);
         dto.setViews(views);
-
         return dto;
     }
 
@@ -67,36 +65,13 @@ public class EventMapper {
         EventShortDto dto = new EventShortDto();
         dto.setId(event.getId());
         dto.setAnnotation(event.getAnnotation());
-        dto.setTitle(event.getTitle());
+        dto.setCategory(CategoryMapper.toDto(event.getCategory()));
         dto.setEventDate(event.getEventDate());
+        dto.setInitiator(UserMapper.toShortDto(event.getInitiator()));
         dto.setPaid(event.isPaid());
-
-        dto.setCategory(toCategoryDto(event.getCategory()));
-        dto.setInitiator(toUserShortDto(event.getInitiator()));
-
+        dto.setTitle(event.getTitle());
         dto.setConfirmedRequests(confirmedRequests);
         dto.setViews(views);
-
-        return dto;
-    }
-
-    private static CategoryDto toCategoryDto(Category category) {
-        if (category == null) {
-            return null;
-        }
-        CategoryDto dto = new CategoryDto();
-        dto.setId(category.getId());
-        dto.setName(category.getName());
-        return dto;
-    }
-
-    private static UserShortDto toUserShortDto(User user) {
-        if (user == null) {
-            return null;
-        }
-        UserShortDto dto = new UserShortDto();
-        dto.setId(user.getId());
-        dto.setName(user.getName());
         return dto;
     }
 }

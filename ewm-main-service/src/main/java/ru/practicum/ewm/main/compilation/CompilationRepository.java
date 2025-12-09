@@ -1,10 +1,11 @@
 package ru.practicum.ewm.main.compilation;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import java.util.List;
+
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface CompilationRepository extends JpaRepository<Compilation, Long> {
 
-    Page<Compilation> findAllByPinned(boolean pinned, Pageable pageable);
+    List<Compilation> findAllByPinned(boolean pinned, PageRequest pageRequest);
 }

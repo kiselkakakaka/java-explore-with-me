@@ -18,7 +18,7 @@ public class Compilation {
     private String title;
 
     @Column(nullable = false)
-    private boolean pinned;
+    private boolean pinned = false;
 
     @ManyToMany
     @JoinTable(
