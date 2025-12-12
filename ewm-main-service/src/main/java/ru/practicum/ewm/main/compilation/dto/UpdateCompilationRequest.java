@@ -6,7 +6,9 @@ import java.util.List;
 
 public class UpdateCompilationRequest {
 
-    @Size(max = 50)
+    // null разрешаем (поле может не прийти в PATCH),
+    // но запрещаем пустую строку и режем по контракту до 50
+    @Size(min = 1, max = 50)
     private String title;
 
     private Boolean pinned;
@@ -39,3 +41,4 @@ public class UpdateCompilationRequest {
         this.events = events;
     }
 }
+
