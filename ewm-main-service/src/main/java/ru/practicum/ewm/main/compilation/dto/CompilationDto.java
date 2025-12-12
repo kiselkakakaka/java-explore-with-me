@@ -1,13 +1,17 @@
 package ru.practicum.ewm.main.compilation.dto;
 
-import java.util.List;
-
+import jakarta.validation.constraints.Size;
 import ru.practicum.ewm.main.event.dto.EventShortDto;
+
+import java.util.List;
 
 public class CompilationDto {
 
     private Long id;
+
+    @Size(min = 1, max = 50) // <-- max = 50
     private String title;
+
     private Boolean pinned;
     private List<EventShortDto> events;
 

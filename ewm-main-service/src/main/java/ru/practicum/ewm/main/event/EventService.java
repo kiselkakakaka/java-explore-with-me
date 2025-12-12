@@ -37,6 +37,7 @@ public class EventService {
     private final ParticipationRequestRepository requestRepository;
     private final StatsClient statsClient;
 
+    // Локальный учёт просмотренных событий по IP
     private final Map<Long, Set<String>> eventViewsByIp = new ConcurrentHashMap<>();
 
     public EventService(EventRepository eventRepository,
@@ -163,10 +164,11 @@ public class EventService {
             event.setCategory(category);
         }
         if (dto.getStateAction() != null) {
-            switch (dto.getStateAction()) {
-                case "SEND_TO_REVIEW" -> event.setState(EventState.PENDING);
-                case "CANCEL_REVIEW" -> event.setState(EventState.CANCELED);
-                default -> throw new BadRequestException("Unknown stateAction: " + dto.getStateAction());
+            EventStateAction action = parseStateAction(dto.getStateAction());
+            switch (action) {
+                case SEND_TO_REVIEW -> event.setState(EventState.PENDING);
+                case CANCEL_REVIEW -> event.setState(EventState.CANCELED);
+                default -> throw new BadRequestException("Unsupported stateAction for user: " + action);
             }
         }
     }
@@ -269,8 +271,9 @@ public class EventService {
             event.setCategory(category);
         }
         if (dto.getStateAction() != null) {
-            switch (dto.getStateAction()) {
-                case "PUBLISH_EVENT" -> {
+            EventStateAction action = parseStateAction(dto.getStateAction());
+            switch (action) {
+                case PUBLISH_EVENT -> {
                     if (event.getState() != EventState.PENDING) {
                         throw new ConflictException(
                                 "Cannot publish the event because it's not in the right state: " + event.getState()
@@ -279,13 +282,13 @@ public class EventService {
                     event.setState(EventState.PUBLISHED);
                     event.setPublishedOn(LocalDateTime.now());
                 }
-                case "REJECT_EVENT" -> {
+                case REJECT_EVENT -> {
                     if (event.getState() == EventState.PUBLISHED) {
                         throw new ConflictException("Cannot reject the event because it's already published");
                     }
                     event.setState(EventState.CANCELED);
                 }
-                default -> throw new BadRequestException("Unknown stateAction: " + dto.getStateAction());
+                default -> throw new BadRequestException("Unsupported stateAction for admin: " + action);
             }
         }
     }
@@ -472,6 +475,14 @@ public class EventService {
             return ips.size();
         }
         return getViewsForEvents(List.of(event)).getOrDefault(event.getId(), 0L);
+    }
+
+    private EventStateAction parseStateAction(String raw) {
+        try {
+            return EventStateAction.valueOf(raw);
+        } catch (IllegalArgumentException ex) {
+            throw new BadRequestException("Unknown stateAction: " + raw);
+        }
     }
 
     private void validatePage(int from, int size) {
