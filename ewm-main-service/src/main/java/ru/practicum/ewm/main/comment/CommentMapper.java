@@ -7,18 +7,14 @@ public final class CommentMapper {
     private CommentMapper() {
     }
 
-    public static CommentDto toDto(Comment c) {
-        Long eventId = (c.getEvent() != null) ? c.getEvent().getId() : null;
-        Long authorId = (c.getAuthor() != null) ? c.getAuthor().getId() : null;
-
+    public static CommentDto toDto(Comment comment) {
         return new CommentDto(
-                c.getId(),
-                eventId,
-                authorId,
-                c.getText(),
-                c.getCreatedOn(),
-                c.getEditedOn()
+                comment.getId(),
+                comment.getEvent().getId(),
+                comment.getAuthor().getId(),
+                comment.getText(),
+                comment.getCreatedOn(),
+                comment.getEditedOn()
         );
     }
 }
-

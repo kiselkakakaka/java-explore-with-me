@@ -46,23 +46,24 @@ public class CommentService {
             throw new ConflictException("Comments are allowed only for published events");
         }
 
-        Comment c = new Comment();
-        c.setAuthor(author);
-        c.setEvent(event);
-        c.setText(dto.getText());
-        c.setCreatedOn(LocalDateTime.now());
+        Comment comment = new Comment();
+        comment.setAuthor(author);
+        comment.setEvent(event);
+        comment.setText(dto.getText());
+        comment.setCreatedOn(LocalDateTime.now());
 
-        Comment saved = commentRepository.save(c);
-        return CommentMapper.toDto(saved);
+        Comment savedComment = commentRepository.save(comment);
+        return CommentMapper.toDto(savedComment);
     }
 
     public List<CommentDto> getEventComments(long eventId) {
-        if (!eventRepository.existsById(eventId)) {
+        List<Comment> comments = commentRepository.findAllByEventIdOrderByCreatedOnDesc(eventId);
+
+        if (comments.isEmpty() && !eventRepository.existsById(eventId)) {
             throw new NotFoundException("Event with id=" + eventId + " was not found");
         }
 
-        return commentRepository.findAllByEventIdOrderByCreatedOnDesc(eventId)
-                .stream()
+        return comments.stream()
                 .map(CommentMapper::toDto)
                 .collect(Collectors.toList());
     }
@@ -72,18 +73,18 @@ public class CommentService {
         userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User with id=" + userId + " was not found"));
 
-        Comment c = commentRepository.findById(commentId)
+        Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new NotFoundException("Comment with id=" + commentId + " was not found"));
 
-        if (!Objects.equals(c.getAuthor().getId(), userId)) {
+        if (!Objects.equals(comment.getAuthor().getId(), userId)) {
             throw new ConflictException("Only author can update the comment");
         }
 
-        c.setText(dto.getText());
-        c.setEditedOn(LocalDateTime.now());
+        comment.setText(dto.getText());
+        comment.setEditedOn(LocalDateTime.now());
 
-        Comment saved = commentRepository.save(c);
-        return CommentMapper.toDto(saved);
+        Comment savedComment = commentRepository.save(comment);
+        return CommentMapper.toDto(savedComment);
     }
 
     @Transactional
@@ -91,14 +92,13 @@ public class CommentService {
         userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User with id=" + userId + " was not found"));
 
-        Comment c = commentRepository.findById(commentId)
+        Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new NotFoundException("Comment with id=" + commentId + " was not found"));
 
-        if (!Objects.equals(c.getAuthor().getId(), userId)) {
+        if (!Objects.equals(comment.getAuthor().getId(), userId)) {
             throw new ConflictException("Only author can delete the comment");
         }
 
         commentRepository.deleteById(commentId);
     }
 }
-
