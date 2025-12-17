@@ -1,0 +1,193 @@
+{
+  "info": {
+    "name": "EWM – Comments feature",
+    "_postman_id": "comments-feature-collection",
+    "description": "Auto setup + comments tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Setup – Create user",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "http://localhost:8080/admin/users",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Test user\",\n  \"email\": \"test@test.ru\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('User created', () => pm.response.code === 201);",
+              "pm.environment.set('userId', pm.response.json().id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Setup – Create category",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "http://localhost:8080/admin/categories",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"name\": \"Test category\" }"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Category created', () => pm.response.code === 201);",
+              "pm.environment.set('categoryId', pm.response.json().id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Setup – Create event",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "http://localhost:8080/users/{{userId}}/events",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"annotation\": \"Annotation text\",\n  \"description\": \"Description text\",\n  \"category\": {{categoryId}},\n  \"eventDate\": \"2030-01-01 12:00:00\",\n  \"location\": { \"lat\": 55.75, \"lon\": 37.61 },\n  \"paid\": false,\n  \"participantLimit\": 0,\n  \"requestModeration\": true,\n  \"title\": \"Test event\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Event created', () => pm.response.code === 201);",
+              "pm.environment.set('eventId', pm.response.json().id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Setup – Publish event",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "http://localhost:8080/admin/events/{{eventId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"stateAction\": \"PUBLISH_EVENT\" }"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Event published', () => pm.response.code === 200);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Comments – Add comment",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "http://localhost:8080/users/{{userId}}/events/{{eventId}}/comments",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"text\": \"First comment\" }"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Comment created', () => pm.response.code === 201);",
+              "pm.environment.set('commentId', pm.response.json().id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Comments – Get event comments",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:8080/events/{{eventId}}/comments"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Comments returned', () => pm.response.code === 200);",
+              "pm.test('Is array', () => Array.isArray(pm.response.json()));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Comments – Update comment",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "http://localhost:8080/users/{{userId}}/comments/{{commentId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"text\": \"Updated comment\" }"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Comment updated', () => pm.response.code === 200);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Comments – Delete comment",
+      "request": {
+        "method": "DELETE",
+        "url": "http://localhost:8080/users/{{userId}}/comments/{{commentId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Comment deleted', () => pm.response.code === 204);"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

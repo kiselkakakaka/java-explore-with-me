@@ -1,4 +1,5 @@
 DROP TABLE IF EXISTS compilation_events;
+DROP TABLE IF EXISTS comments;
 DROP TABLE IF EXISTS requests;
 DROP TABLE IF EXISTS events;
 DROP TABLE IF EXISTS compilations;
@@ -21,7 +22,6 @@ CREATE TABLE IF NOT EXISTS categories (
     name    VARCHAR(50) NOT NULL,
     CONSTRAINT uq_category_name UNIQUE (name)
 );
-
 
 CREATE TABLE IF NOT EXISTS events (
     id                  BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -61,6 +61,21 @@ CREATE TABLE IF NOT EXISTS requests (
         FOREIGN KEY (requester_id) REFERENCES users (id) ON DELETE CASCADE,
 
     CONSTRAINT uq_request UNIQUE (event_id, requester_id)
+);
+
+CREATE TABLE IF NOT EXISTS comments (
+    id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    text       VARCHAR(2000) NOT NULL,
+    event_id   BIGINT NOT NULL,
+    author_id  BIGINT NOT NULL,
+    created_on TIMESTAMP NOT NULL,
+    edited_on  TIMESTAMP,
+
+    CONSTRAINT fk_comments_event
+        FOREIGN KEY (event_id) REFERENCES events (id) ON DELETE CASCADE,
+
+    CONSTRAINT fk_comments_author
+        FOREIGN KEY (author_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS compilations (
